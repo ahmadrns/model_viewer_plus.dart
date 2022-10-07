@@ -55,7 +55,7 @@ class ModelViewerState extends State<ModelViewer> {
     } else {
       return WebView(
         onProgress: widget.onProgress,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         initialUrl: null,
         javascriptMode: JavascriptMode.unrestricted,
         initialMediaPlaybackPolicy: AutoMediaPlaybackPolicy.always_allow,
