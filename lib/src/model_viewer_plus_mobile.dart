@@ -2,27 +2,23 @@
 
 import 'dart:async' show Completer;
 import 'dart:convert' show utf8;
-import 'dart:io'
-    show File, HttpRequest, HttpServer, HttpStatus, InternetAddress, Platform;
+import 'dart:io' show File, HttpRequest, HttpServer, HttpStatus, InternetAddress, Platform;
 import 'dart:typed_data' show Uint8List;
+
+import 'package:android_intent_plus/android_intent.dart' as android_content;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:path/path.dart' as p;
-
-import 'package:android_intent_plus/flag.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:android_intent_plus/android_intent.dart' as android_content;
+import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'html_builder.dart';
-
 import 'model_viewer_plus.dart';
 
 class ModelViewerState extends State<ModelViewer> {
-  final Completer<WebViewController> _controller =
-      Completer<WebViewController>();
+  final Completer<WebViewController> _controller = Completer<WebViewController>();
 
   HttpServer? _proxy;
   late String _proxyURL;
@@ -58,6 +54,7 @@ class ModelViewerState extends State<ModelViewer> {
       );
     } else {
       return WebView(
+        onProgress: widget.onProgress,
         backgroundColor: Colors.transparent,
         initialUrl: null,
         javascriptMode: JavascriptMode.unrestricted,
@@ -114,23 +111,16 @@ class ModelViewerState extends State<ModelViewer> {
               action: "android.intent.action.VIEW", // Intent.ACTION_VIEW
               // See https://developers.google.com/ar/develop/scene-viewer#3d-or-ar
               // data should be something like "https://arvr.google.com/scene-viewer/1.0?file=https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF/Avocado.gltf"
-              data: Uri(
-                  scheme: 'https',
-                  host: 'arvr.google.com',
-                  path: '/scene-viewer/1.0',
-                  queryParameters: {
-                    // 'title': '', // TODO: maybe set by the user
-                    // TODO: further test, and make it 'ar_preferred'
-                    'mode': 'ar_preferred',
-                    'file': fileURL,
-                  }).toString(),
+              data: Uri(scheme: 'https', host: 'arvr.google.com', path: '/scene-viewer/1.0', queryParameters: {
+                // 'title': '', // TODO: maybe set by the user
+                // TODO: further test, and make it 'ar_preferred'
+                'mode': 'ar_preferred',
+                'file': fileURL,
+              }).toString(),
               // package changed to com.google.android.googlequicksearchbox
               // to support the widest possible range of devices
               package: "com.google.android.googlequicksearchbox",
-              arguments: <String, dynamic>{
-                'browser_fallback_url':
-                    'market://details?id=com.google.android.googlequicksearchbox'
-              },
+              arguments: <String, dynamic>{'browser_fallback_url': 'market://details?id=com.google.android.googlequicksearchbox'},
             );
             await intent.launch().onError((error, stackTrace) {
               print('>>>> ModelViewer Intent Error: $error'); // DEBUG
@@ -147,8 +137,7 @@ class ModelViewerState extends State<ModelViewer> {
           //print('>>>> ModelViewer finished loading: <$url>'); // DEBUG
         },
         onWebResourceError: (final WebResourceError error) {
-          print(
-              '>>>> ModelViewer failed to load: ${error.description} (${error.errorType} ${error.errorCode})'); // DEBUG
+          print('>>>> ModelViewer failed to load: ${error.description} (${error.errorType} ${error.errorCode})'); // DEBUG
         },
       );
     }
@@ -243,8 +232,7 @@ class ModelViewerState extends State<ModelViewer> {
       switch (request.uri.path) {
         case '/':
         case '/index.html':
-          final htmlTemplate = await rootBundle
-              .loadString('packages/model_viewer_plus/assets/template.html');
+          final htmlTemplate = await rootBundle.loadString('packages/model_viewer_plus/assets/template.html');
           final html = utf8.encode(_buildHTML(htmlTemplate));
           response
             ..statusCode = HttpStatus.ok
@@ -255,12 +243,10 @@ class ModelViewerState extends State<ModelViewer> {
           break;
 
         case '/model-viewer.min.js':
-          final code = await _readAsset(
-              'packages/model_viewer_plus/assets/model-viewer.min.js');
+          final code = await _readAsset('packages/model_viewer_plus/assets/model-viewer.min.js');
           response
             ..statusCode = HttpStatus.ok
-            ..headers
-                .add("Content-Type", "application/javascript;charset=UTF-8")
+            ..headers.add("Content-Type", "application/javascript;charset=UTF-8")
             ..headers.add("Content-Length", code.lengthInBytes.toString())
             ..add(code);
           await response.close();
@@ -271,9 +257,7 @@ class ModelViewerState extends State<ModelViewer> {
             // debugPrint(url.toString());
             await response.redirect(url); // TODO: proxy the resource
           } else {
-            final data = await (url.isScheme("file")
-                ? _readFile(url.path)
-                : _readAsset(url.path));
+            final data = await (url.isScheme("file") ? _readFile(url.path) : _readAsset(url.path));
             response
               ..statusCode = HttpStatus.ok
               ..headers.add("Content-Type", "application/octet-stream")
@@ -302,11 +286,7 @@ class ModelViewerState extends State<ModelViewer> {
             // Some gltf models need other resources from the origin
             var pathSegments = [...url.pathSegments];
             pathSegments.removeLast();
-            var tryDestination = p.joinAll([
-              url.origin,
-              ...pathSegments,
-              request.uri.path.replaceFirst('/', '')
-            ]);
+            var tryDestination = p.joinAll([url.origin, ...pathSegments, request.uri.path.replaceFirst('/', '')]);
             debugPrint("Try: ${tryDestination}");
             await response.redirect(Uri.parse(tryDestination));
           } else {
