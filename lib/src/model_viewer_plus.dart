@@ -574,7 +574,7 @@ class ModelViewer extends StatefulWidget {
 
   ///This callback will used for getting the progress of 3D asset
   /// Output: return [100] when 3D asset loads completely
-  final Function(int) onProgress;
+  final Function(String) onProgress;
 
   @override
   State<ModelViewer> createState() => ModelViewerState();

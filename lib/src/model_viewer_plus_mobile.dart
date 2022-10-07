@@ -54,7 +54,6 @@ class ModelViewerState extends State<ModelViewer> {
       );
     } else {
       return WebView(
-        onProgress: widget.onProgress,
         backgroundColor: Colors.black,
         initialUrl: null,
         javascriptMode: JavascriptMode.unrestricted,
@@ -133,9 +132,7 @@ class ModelViewerState extends State<ModelViewer> {
         onPageStarted: (final String url) {
           //print('>>>> ModelViewer began loading: <$url>'); // DEBUG
         },
-        onPageFinished: (final String url) {
-          //print('>>>> ModelViewer finished loading: <$url>'); // DEBUG
-        },
+        onPageFinished: widget.onProgress,
         onWebResourceError: (final WebResourceError error) {
           print('>>>> ModelViewer failed to load: ${error.description} (${error.errorType} ${error.errorCode})'); // DEBUG
         },
